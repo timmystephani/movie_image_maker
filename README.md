@@ -25,7 +25,10 @@ python main.py
 ```
 
 ## Examples
+Suits - Season 5 Episode 5
 ![Example 1](http://i.imgur.com/SXoZxyK.jpg)
+Fun with Dick and Jane
+![Example 1](http://i.imgur.com/f3S631A.jpg)
 
 ## TODOS
 * Add black image gradient (clear in middle, darker on top and bottom)

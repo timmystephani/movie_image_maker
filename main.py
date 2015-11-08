@@ -9,7 +9,6 @@ INPUT_VIDEO_NAME = 'input.mp4'
 
 # Output file options
 OUTPUT_FOLDER = 'output/'
-OUTPUT_IMAGE_FOLDER = OUTPUT_FOLDER + 'images/'
 OUTPUT_IMAGE_FILE = 'output'
 OUTPUT_FILE_TYPE = 'PNG'
 OUTPUT_IMAGE_WIDTH = 1920
@@ -101,8 +100,8 @@ if not os.path.exists(INPUT_VIDEO_FOLDER + INPUT_VIDEO_NAME):
     sys.exit(1)
 
 # Make sure output folder exists
-if not os.path.exists(OUTPUT_IMAGE_FOLDER):
-    os.makedirs(OUTPUT_IMAGE_FOLDER)
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
 
 print 'Computing average image colors...'
 average_image_colors = compute_average_image_colors(INPUT_VIDEO_FOLDER + INPUT_VIDEO_NAME)
