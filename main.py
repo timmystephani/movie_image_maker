@@ -38,12 +38,15 @@ def compute_average_image_colors(video_path):
     while True:
         # Read in current frame
         rval, frame = vc.read()
+
+        # If we stop reading data, break out
+        if not rval:
+            break
         
-        # Only sample some images
+        # Only sample some images, comment the next line if you want to use every frame
         if image_count % frame_sample_rate == 0:
             img = Image.fromarray(frame)
             img = img.resize((50,50))
-            
             average = compute_average_image_color(img)
             average_image_colors.append(average)
 
@@ -51,10 +54,6 @@ def compute_average_image_colors(video_path):
         if image_count % (frame_count / 10) == 0 or image_count == frame_count:
             progress = int(image_count / float(frame_count) * 100)
             print '\t' + str(progress) + '% complete'
-            
-        # If we stop reading data, break out
-        if not rval:
-            break
 
         # Check for force close/interrupt events
         cv2.waitKey(1) 
@@ -92,6 +91,8 @@ def create_image_from_column_colors(column_colors):
         for y in range(OUTPUT_IMAGE_HEIGHT):
             output_image.putpixel((column_index, y), color)
 
+    # If you comment out the sampling code, uncomment the line below
+    # return output_image.resize((OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT))
     return output_image
 
 # Make sure input file exists
