@@ -18,27 +18,52 @@ OUTPUT_IMAGE_HEIGHT = 1080
 # Various constants
 IMAGE_MODE = 'RGB'
 
-def convert_video_to_images(video_path, output_folder):
+def compute_average_image_colors(video_path):
     '''
-    Copied from Ayub Khan's answer on StackOverflow
+    Copied from Ayub Khan's answer on StackOverflow:
     http://stackoverflow.com/questions/10672578/extract-video-frames-in-python
     '''
     vc = cv2.VideoCapture(video_path)
     
-    if vc.isOpened():
-        rval, frame = vc.read()
-    else:
-        rval = False
+    if not vc.isOpened():
+        print 'Error: Could not open video file: ' + video_path
+        sys.exit(1)
 
+    frame_count = int(vc.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+
+    frame_sample_rate = frame_count / OUTPUT_IMAGE_WIDTH
+    
     image_count = 1
-    while rval:
+    average_image_colors = []
+    while True:
+        # Read in current frame
         rval, frame = vc.read()
-        cv2.imwrite(output_folder + str(image_count) + '.' + OUTPUT_FILE_TYPE.lower(), frame)
-        image_count += 1
-        cv2.waitKey(1)
         
+        # Only sample some images
+        if image_count % frame_sample_rate == 0:
+            img = Image.fromarray(frame)
+            img = img.resize((50,50))
+            
+            average = compute_average_image_color(img)
+            average_image_colors.append(average)
+
+        # This step can take a while, output progress every 10%
+        if image_count % (frame_count / 10) == 0 or image_count == frame_count:
+            progress = int(image_count / float(frame_count) * 100)
+            print '\t' + str(progress) + '% complete'
+            
+        # If we stop reading data, break out
+        if not rval:
+            break
+
+        # Check for force close/interrupt events
+        cv2.waitKey(1) 
+
+        image_count += 1
+
     vc.release()
-    return image_count
+
+    return average_image_colors
 
 def compute_average_image_color(img):
     width, height = img.size
@@ -56,31 +81,16 @@ def compute_average_image_color(img):
 
     return (r_ave, g_ave, b_ave)
 
-def compute_average_column_colors(frame_count, image_folder):
-    frame_sample_rate = frame_count / OUTPUT_IMAGE_WIDTH
-
-    average_image_colors = []
-    for current_frame_index in range(1, frame_count, frame_sample_rate):
-        image_path = image_folder + str(current_frame_index) + '.' + OUTPUT_FILE_TYPE.lower()
-        print 'Using image: ' + image_path
-        img = Image.open(image_path)
-        # Scale to 50x50 to speed things up
-        img = img.resize((50,50))
-            
-        average = compute_average_image_color(img)
-        average_image_colors.append(average)
-
-    return average_image_colors
 
 def create_image_from_column_colors(column_colors):
     output_image = Image.new(IMAGE_MODE, (len(column_colors), OUTPUT_IMAGE_HEIGHT))
 
     for column_index in range(len(column_colors)):
-        colors = column_colors[column_index]
+        color = column_colors[column_index]
         
         # Fill entire column with same color
         for y in range(OUTPUT_IMAGE_HEIGHT):
-            output_image.putpixel((column_index, y), colors)
+            output_image.putpixel((column_index, y), color)
 
     return output_image
 
@@ -89,22 +99,15 @@ if not os.path.exists(INPUT_VIDEO_FOLDER + INPUT_VIDEO_NAME):
     print 'Error: Input movie file does not exist at location: ' + INPUT_VIDEO_FOLDER + INPUT_VIDEO_NAME
     sys.exit(1)
 
-# Make sure output folder exists and old images are removed
-if os.path.exists(OUTPUT_IMAGE_FOLDER):
-    for old_file in os.listdir(OUTPUT_IMAGE_FOLDER):
-        if os.path.isfile(old_file):
-            os.unlink(old_file)
-else:
+# Make sure output folder exists
+if not os.path.exists(OUTPUT_IMAGE_FOLDER):
     os.makedirs(OUTPUT_IMAGE_FOLDER)
 
-print 'Converting video to images...'
-image_count = convert_video_to_images(INPUT_VIDEO_FOLDER + INPUT_VIDEO_NAME, OUTPUT_IMAGE_FOLDER)
-
-print 'Computing average column colors...'
-column_colors = compute_average_column_colors(image_count, OUTPUT_IMAGE_FOLDER)
+print 'Computing average image colors...'
+average_image_colors = compute_average_image_colors(INPUT_VIDEO_FOLDER + INPUT_VIDEO_NAME)
 
 print 'Creating new image...'
-output_image = create_image_from_column_colors(column_colors)
+output_image = create_image_from_column_colors(average_image_colors)
 
 print 'Saving image...'
 output_image_path = OUTPUT_FOLDER + OUTPUT_IMAGE_FILE + '.' + OUTPUT_FILE_TYPE.lower()
